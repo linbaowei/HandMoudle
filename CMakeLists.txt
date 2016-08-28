@@ -1,0 +1,26 @@
+cmake_minimum_required(VERSION 2.6)
+project(handmodlue)
+SET(CMAKE_BUILD_TYPE Debug)
+FIND_PACKAGE (Threads)
+FIND_PACKAGE(OpenCV REQUIRED)
+find_package(PCL 1.7 REQUIRED)
+include_directories(${PCL_INCLUDE_DIRS})
+link_directories(${PCL_LIBRARY_DIRS})
+add_definitions(${PCL_DEFINITIONS})
+FIND_PACKAGE( OpenMP REQUIRED)  
+if(OPENMP_FOUND)  
+message("OPENMP FOUND")  
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")  
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")  
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")  
+endif() 
+
+add_executable(handmoudle handmoudlemain.cpp handmoudle.cpp Geomentry.cpp)
+target_link_libraries (handmoudle ${PCL_LIBRARIES} ${OpenCV_LIBS} ANN pthread)
+
+add_executable(handposeEst handposeEstmain.cpp handmoudle.cpp Geomentry.cpp)
+target_link_libraries (handposeEst ${PCL_LIBRARIES} ${OpenCV_LIBS} ANN pthread)
+
+
+add_executable(pallarl pallarl.cpp)
+target_link_libraries (pallarl ${PCL_LIBRARIES} ${OpenCV_LIBS} ANN pthread)
