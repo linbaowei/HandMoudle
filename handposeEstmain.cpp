@@ -136,7 +136,9 @@ int main(int argc, char **argv) {
   
 
   cout << "----------------------------------------" << endl;
-
+  int64 start=0,end=0;  
+  start = cv::getTickCount();    
+    
   
   //i: hand pose num
   #pragma omp parallel for 
@@ -163,8 +165,8 @@ int main(int argc, char **argv) {
   
   
   sort(result.begin(), result.end(), cmp);
-  vector<pair<float, int> >::iterator iter,end;
-  for (iter = result.begin(), end = result.end(); iter != end; ++iter)
+  vector<pair<float, int> >::iterator iter,iterend;
+  for (iter = result.begin(), iterend = result.end(); iter != iterend; ++iter)
   {
     if(iter->second > pointcloudnum)
     {
@@ -180,10 +182,10 @@ int main(int argc, char **argv) {
     string pointcloudfile ="./pointclouds/"+handposenum+".ply";
     pcl::PointCloud<PointType> handpointcloud0 = geo.readPointCloud(pointcloudfile);
     
-    Eigen::Affine3f transform_handpointcloud0 = Eigen::Affine3f::Identity();     
+    /*Eigen::Affine3f transform_handpointcloud0 = Eigen::Affine3f::Identity();     
     transform_handpointcloud0.translation() << 50.0, i * 100, 0.0;  
     transform_handpointcloud0.rotate (Eigen::AngleAxisf (angle2deg(0), Eigen::Vector3f::UnitZ())); 
-    pcl::transformPointCloud (handpointcloud0, handpointcloud0, transform_handpointcloud0);  
+    pcl::transformPointCloud (handpointcloud0, handpointcloud0, transform_handpointcloud0); */ 
   
     pcl::visualization::PointCloudColorHandlerRGBField<PointType> handpointcloud0_color(handpointcloud0.makeShared());
     mainviewhand.addPointCloud(handpointcloud0.makeShared(), handpointcloud0_color, "handpointcloud0"+handposenum);
@@ -191,6 +193,8 @@ int main(int argc, char **argv) {
     mainviewhand.spinOnce ();
 
   }
+  end = cv::getTickCount();  
+  cout << "The differences: " << 1000.0*(end - start)/cv::getTickFrequency()<<" ms"<< endl; 
   while (!mainview.wasStopped ())
   {
     mainview.spinOnce ();
