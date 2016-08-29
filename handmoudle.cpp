@@ -803,7 +803,7 @@ bool loadDescriptor(vector <vector <float> > & Descriptor, string filename)
 }
 
 
-vector <float> NN(vector<float> a, vector<vector <float> > allfeatures)
+vector <float> NN(vector<float> a, vector<vector <float> > allfeatures, float & distanceerror)
 {
   pcl::PointCloud<pcl::PointXYZ> cloud;
 
@@ -838,9 +838,52 @@ vector <float> NN(vector<float> a, vector<vector <float> > allfeatures)
     nnfeature[0] = cloud.points[ pointIdxNKNSearch[0] ].x;
     nnfeature[1] = cloud.points[ pointIdxNKNSearch[0] ].y;
     nnfeature[2] = cloud.points[ pointIdxNKNSearch[0] ].z;
-		
+    distanceerror = pointNKNSquaredDistance[0];
   }
   return nnfeature;
+}
+
+int NN2(vector<float> a, vector<vector <float> > allfeatures, float searchradius)
+{
+  pcl::PointCloud<pcl::PointXYZ> cloud;
+
+  // Generate pointcloud data
+ 
+  cloud.resize (allfeatures.size());
+
+  for (size_t i = 0; i < cloud.points.size (); ++i)
+  {
+    cloud.points[i].x = allfeatures.at(i)[0];
+    cloud.points[i].y = allfeatures.at(i)[1];
+    cloud.points[i].z = allfeatures.at(i)[2];
+  }
+  pcl::KdTreeFLANN<pcl::PointXYZ> kdtree;
+
+  kdtree.setInputCloud (cloud.makeShared());
+
+  pcl::PointXYZ searchPoint;
+
+  searchPoint.x = a[0];
+  searchPoint.y = a[1];
+  searchPoint.z = a[2];
+  
+  std::vector<int> pointIdxRadiusSearch;
+  std::vector<float> pointRadiusSquaredDistance;
+
+  float radius = searchradius * 1.5;
+
+
+
+//   if ( kdtree.radiusSearch (searchPoint, radius, pointIdxRadiusSearch, pointRadiusSquaredDistance) > 0 )
+//   {
+//     for (size_t i = 0; i < pointIdxRadiusSearch.size (); ++i)
+//       std::cout << "    "  <<   cloud->points[ pointIdxRadiusSearch[i] ].x 
+//                 << " " << cloud->points[ pointIdxRadiusSearch[i] ].y 
+//                 << " " << cloud->points[ pointIdxRadiusSearch[i] ].z 
+//                 << " (squared distance: " << pointRadiusSquaredDistance[i] << ")" << std::endl;
+//   }
+
+  return pointIdxRadiusSearch.size ();
 }
 
 float Dist(vector<float> a, vector<float> b)

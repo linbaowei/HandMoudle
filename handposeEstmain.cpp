@@ -146,15 +146,29 @@ int main(int argc, char **argv) {
   {
 //     if(i%50 == 0)
 //       cout << i << endl;
-    float Ei_j = 0;
+    float Ei_j = 0; 
+    float w_i = 0;
     //j: feature num of hand pose i
     for(int j = 0; j < allhands.at(i).size(); ++ j)
     {
-      vector<float> nnfeature = NN(allhands.at(i).at(j), objectDescriptor);
+      float diserror = 10e10;
+      int count_denominator = 0;
+      vector<float> nnfeature = NN(allhands.at(i).at(j), objectDescriptor, diserror);
+      int count_numerator = NN2(allhands.at(i).at(j), objectDescriptor, diserror);
+      for(int p = 0; p < allhands.size(); ++ p)
+      {
+	if(i != p)
+	{
+	  int count_denominatortmp = NN2(allhands.at(i).at(j), allhands.at(p), diserror);
+	  count_denominator += count_denominatortmp;
+	}
+      }
+      float w_ik = (float)count_numerator / (float)count_denominator;
+      w_i += w_ik;
       float tmp_E = Dist(allhands.at(i).at(j), nnfeature);
-      Ei_j += tmp_E;
+      Ei_j += w_ik *tmp_E;
     }
-    Ei_j /= allhands.at(i).size();
+    Ei_j /= (allhands.at(i).size()*w_i);
     pair<float, int> tmpres;
     tmpres.first = Ei_j;
     tmpres.second = i;
@@ -173,7 +187,7 @@ int main(int argc, char **argv) {
       result.erase(iter);
     }
   }
-  for(int i = 0; i < 5; ++ i)
+  for(int i = 0; i < 10; ++ i)
   {
     pcl::visualization::PCLVisualizer mainviewhand("pointcloud"+i);  
     mainviewhand.setPosition(0,0);	

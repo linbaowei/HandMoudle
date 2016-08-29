@@ -40,5 +40,6 @@ Eigen::Affine3f rotation01(float theta);
 pcl::PointCloud<PointType> estimateTatchingPointsAndNormals(pcl::PointCloud<PointType> pointcloud);
 bool saveDescriptor(pcl::PointCloud<PointType> handmoudle, string filename);
 bool loadDescriptor(vector <vector <float> > & Descriptor, string filename);
-vector <float> NN(vector<float> a, vector< vector<float> > allfeatures);
+vector <float> NN(vector<float> a, vector< vector<float> > allfeatures, float & distanceerror);
+int NN2(vector<float> a, vector< vector<float> > allfeatures, float searchradius);
 float Dist(vector<float> a, vector<float> b);
