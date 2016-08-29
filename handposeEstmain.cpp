@@ -141,11 +141,11 @@ int main(int argc, char **argv) {
     
   
   //i: hand pose num
-  #pragma omp parallel for 
+  //#pragma omp parallel for 
   for(int i = 0; i < allhands.size(); ++ i)
   {
-//     if(i%50 == 0)
-//       cout << i << endl;
+    //if(i%10 == 0)
+      cout << i << endl;
     float Ei_j = 0; 
     float w_i = 0;
     //j: feature num of hand pose i
@@ -160,13 +160,17 @@ int main(int argc, char **argv) {
 	if(i != p)
 	{
 	  int count_denominatortmp = NN2(allhands.at(i).at(j), allhands.at(p), diserror);
+	  if(count_denominatortmp > 0)
 	  count_denominator += count_denominatortmp;
 	}
       }
-      float w_ik = (float)count_numerator / (float)count_denominator;
-      w_i += w_ik;
-      float tmp_E = Dist(allhands.at(i).at(j), nnfeature);
-      Ei_j += w_ik *tmp_E;
+      if(count_denominator != 0)
+      {
+	float w_ik = (float)count_numerator / (float)count_denominator;
+	w_i += w_ik;	
+	float tmp_E = Dist(allhands.at(i).at(j), nnfeature);
+	Ei_j += w_ik *tmp_E;  
+      }
     }
     Ei_j /= (allhands.at(i).size()*w_i);
     pair<float, int> tmpres;
@@ -182,6 +186,10 @@ int main(int argc, char **argv) {
   vector<pair<float, int> >::iterator iter,iterend;
   for (iter = result.begin(), iterend = result.end(); iter != iterend; ++iter)
   {
+    if(iter->first == 0)
+    {
+      result.erase(iter);
+    }
     if(iter->second > pointcloudnum)
     {
       result.erase(iter);

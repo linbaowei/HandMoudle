@@ -870,19 +870,19 @@ int NN2(vector<float> a, vector<vector <float> > allfeatures, float searchradius
   std::vector<int> pointIdxRadiusSearch;
   std::vector<float> pointRadiusSquaredDistance;
 
-  float radius = searchradius * 1.5;
-
+  float radius = searchradius * 100;
 
 
 //   if ( kdtree.radiusSearch (searchPoint, radius, pointIdxRadiusSearch, pointRadiusSquaredDistance) > 0 )
 //   {
 //     for (size_t i = 0; i < pointIdxRadiusSearch.size (); ++i)
-//       std::cout << "    "  <<   cloud->points[ pointIdxRadiusSearch[i] ].x 
-//                 << " " << cloud->points[ pointIdxRadiusSearch[i] ].y 
-//                 << " " << cloud->points[ pointIdxRadiusSearch[i] ].z 
+//       std::cout << "    "  <<   cloud.points[ pointIdxRadiusSearch[i] ].x 
+//                 << " " << cloud.points[ pointIdxRadiusSearch[i] ].y 
+//                 << " " << cloud.points[ pointIdxRadiusSearch[i] ].z 
 //                 << " (squared distance: " << pointRadiusSquaredDistance[i] << ")" << std::endl;
+// 		
 //   }
-
+  kdtree.radiusSearch (searchPoint, radius, pointIdxRadiusSearch, pointRadiusSquaredDistance);
   return pointIdxRadiusSearch.size ();
 }
 
