@@ -98,7 +98,7 @@ pcl::PointCloud<PointType> generatecylinderfirstjoint(float radius,float length)
       if(abs(length - length/10 - height) < 5 && abs(phi - 0) < 0.5 )
       {
 	point.r = 255;
-	point.g = 0;
+	point.g = 100;
 	point.b = 0;
       }
       if(abs(length - length/10 - height) < 1 && abs(phi - M_PI) < 0.2)
@@ -626,6 +626,8 @@ pcl::PointCloud<PointType> paramread(string filename)
   return hand_ori;
 }
 
+
+//problems
 pcl::PointCloud<PointType> estimateTatchingPointsAndNormals(pcl::PointCloud<PointType>  pointcloud)
 {
   pcl::PointCloud<PointType> tatchingpoints;
@@ -634,7 +636,7 @@ pcl::PointCloud<PointType> estimateTatchingPointsAndNormals(pcl::PointCloud<Poin
   tmppoint.y = 0;
   tmppoint.z = 0;
   int count = 0;
-  
+  bool trianglepoint = false;
   Eigen::Vector3f backpoint;
   for(int i = 0; i < pointcloud.size(); ++ i)
   {
@@ -647,6 +649,18 @@ pcl::PointCloud<PointType> estimateTatchingPointsAndNormals(pcl::PointCloud<Poin
       PointType tmppoints;
       tmppoints = pointcloud.at(i);
       tatchingpoints.push_back(tmppoints);
+      trianglepoint = true;
+    }
+    if(pointcloud.at(i).r == 255 && pointcloud.at(i).g == 100 && pointcloud.at(i).b == 0)
+    {      
+      tmppoint.x += pointcloud.at(i).x;
+      tmppoint.y += pointcloud.at(i).y;
+      tmppoint.z += pointcloud.at(i).z;
+      count ++;
+      PointType tmppoints;
+      tmppoints = pointcloud.at(i);
+      tatchingpoints.push_back(tmppoints);
+      
     }
     if(pointcloud.at(i).r == 0 && pointcloud.at(i).g == 0 && pointcloud.at(i).b == 0)
     {      
@@ -656,9 +670,20 @@ pcl::PointCloud<PointType> estimateTatchingPointsAndNormals(pcl::PointCloud<Poin
   tmppoint.x /= count;
   tmppoint.y /= count;
   tmppoint.z /= count;
-  tmppoint.r = 255;
-  tmppoint.g = 255;
-  tmppoint.b = 0;
+  //touching point on fingers
+  if(trianglepoint)
+  {
+    tmppoint.r = 255;
+    tmppoint.g = 255;
+    tmppoint.b = 0;
+  }
+  //touching point on first joints
+  else
+  {
+    tmppoint.r = 100;
+    tmppoint.g = 100;
+    tmppoint.b = 0;
+  }
   Eigen::Vector3f frontpoint = tmppoint.getArray3fMap();
   
   pcl::PCA<PointType> pca;
@@ -726,6 +751,52 @@ float angle2deg(float angle)
   return angle*M_PI/180;
 }
 
+bool saveTrianglepointsfiles(pcl::PointCloud<PointType> handmoudle, string filename)
+{
+  //there are 19 touching points in current hand moudle
+  vector < pair <Eigen::Vector3f, Eigen::Vector3f> > basepoints, otherpoints;  //pair <point, normal>
+  
+  for(int i = 0; i < handmoudle.size(); ++ i)
+  {
+    if(handmoudle.at(i).r == 255 && handmoudle.at(i).g == 255&& handmoudle.at(i).b == 0)  //touching points on fingers
+    {
+      Eigen::Vector3f point = handmoudle.at(i).getArray3fMap();
+      Eigen::Vector3f normal = handmoudle.at(i).getNormalVector3fMap();
+      pair <Eigen::Vector3f, Eigen::Vector3f> tmppair;
+      tmppair.first = point;
+      tmppair.second = normal;
+      basepoints.push_back(tmppair);
+    }
+    if(handmoudle.at(i).r == 100 && handmoudle.at(i).g == 100&& handmoudle.at(i).b == 0)  //touching points on first joints
+    {
+      Eigen::Vector3f point = handmoudle.at(i).getArray3fMap();
+      Eigen::Vector3f normal = handmoudle.at(i).getNormalVector3fMap();
+      pair <Eigen::Vector3f, Eigen::Vector3f> tmppair;
+      tmppair.first = point;
+      tmppair.second = normal;
+      otherpoints.push_back(tmppair);
+    }
+  }
+  srand((unsigned)time(NULL));
+  int index1 = rand()%(basepoints.size());
+  int index2 = rand()%(basepoints.size());
+  while(index1 == index2)
+  {
+    index2 = rand()%(basepoints.size());
+  }  
+  int index3 = rand()%(otherpoints.size());
+  
+  ofstream allfeatures (filename.c_str());
+  allfeatures << basepoints.at(index1).first[0] << " " << basepoints.at(index1).first[1] << " " << basepoints.at(index1).first[2] << " " 
+  << basepoints.at(index1).second[0] << " " << basepoints.at(index1).second[1] << " " << basepoints.at(index1).second[2] << endl;
+  allfeatures << basepoints.at(index2).first[0] << " " << basepoints.at(index2).first[1] << " " << basepoints.at(index2).first[2] << " " 
+  << basepoints.at(index2).second[0] << " " << basepoints.at(index2).second[1] << " " << basepoints.at(index2).second[2] << endl;
+  allfeatures << otherpoints.at(index3).first[0] << " " << otherpoints.at(index3).first[1] << " " << otherpoints.at(index3).first[2] << " " 
+  << otherpoints.at(index3).second[0] << " " << otherpoints.at(index3).second[1] << " " << otherpoints.at(index3).second[2] << endl;
+  allfeatures.close();
+  return true;
+}
+
 bool saveDescriptor(pcl::PointCloud<PointType> handmoudle, string filename)
 {
   //there are 19 touching points in current hand moudle
@@ -754,7 +825,7 @@ bool saveDescriptor(pcl::PointCloud<PointType> handmoudle, string filename)
       {
 	Eigen::Vector3f p1p2 = handtouchpoints.at(j).first - handtouchpoints.at(p).first;
 	float d = p1p2.norm();
-	if(d < 50)
+	if(d < 25)
 	  continue;
 	float theta1 = geo.VectorAngle(handtouchpoints.at(j).second, p1p2);
 	if(theta1 > M_PI/2)
@@ -768,6 +839,49 @@ bool saveDescriptor(pcl::PointCloud<PointType> handmoudle, string filename)
   }
   allfeatures.close();
   return true;
+}
+
+bool loadTrianglepointsfiles(vector <pair<Eigen::Vector3f, Eigen::Vector3f> > & Descriptor, string filename)
+{
+  ifstream featureFile(filename.c_str());
+  if (featureFile.is_open())
+  {    
+    string line;
+    while ( featureFile.good() )
+    {	
+      getline (featureFile,line);     
+      string buf; // Have a buffer string
+      stringstream ss(line); // Insert the string into a stream
+      
+      int position = 0;
+      pair<Eigen::Vector3f, Eigen::Vector3f> points;
+      while (ss >> buf)
+      {
+	if(position < 3)
+	{
+	  Eigen::Vector3f point;
+	  point[position] = atof(buf.c_str());
+	  points.first = point;
+	}
+	if(position >= 3)
+	{
+	  Eigen::Vector3f normal;
+	  normal[position-3] = atof(buf.c_str());
+	  points.second = normal;
+	}
+	position ++;
+      }      
+      if(line != "")
+	Descriptor.push_back(points);
+    }
+    featureFile.close();
+    return true;
+  }
+  else
+  {
+    cerr << "Unable to open file: " << filename << endl;
+    return false;
+  }
 }
 
 bool loadDescriptor(vector <vector <float> > & Descriptor, string filename)
@@ -843,7 +957,7 @@ vector <float> NN(vector<float> a, vector<vector <float> > allfeatures, float & 
   return nnfeature;
 }
 
-int NN2(vector<float> a, vector<vector <float> > allfeatures, float searchradius)
+vector <float> NN2(vector<float> a, vector<vector <float> > allfeatures, float searchradius, float& distanceerror, int & matchingNUM)
 {
   pcl::PointCloud<pcl::PointXYZ> cloud;
 
@@ -870,20 +984,18 @@ int NN2(vector<float> a, vector<vector <float> > allfeatures, float searchradius
   std::vector<int> pointIdxRadiusSearch;
   std::vector<float> pointRadiusSquaredDistance;
 
-  float radius = searchradius * 100;
+  vector <float> nnfeature(3);
+  if ( kdtree.radiusSearch (searchPoint, searchradius, pointIdxRadiusSearch, pointRadiusSquaredDistance) > 0 )
+  {
+    nnfeature[0] = cloud.points[ pointIdxRadiusSearch[0] ].x;
+    nnfeature[1] = cloud.points[ pointIdxRadiusSearch[0] ].y;
+    nnfeature[2] = cloud.points[ pointIdxRadiusSearch[0] ].z;
+    distanceerror = pointRadiusSquaredDistance[0];	
+		
+  }
 
-
-//   if ( kdtree.radiusSearch (searchPoint, radius, pointIdxRadiusSearch, pointRadiusSquaredDistance) > 0 )
-//   {
-//     for (size_t i = 0; i < pointIdxRadiusSearch.size (); ++i)
-//       std::cout << "    "  <<   cloud.points[ pointIdxRadiusSearch[i] ].x 
-//                 << " " << cloud.points[ pointIdxRadiusSearch[i] ].y 
-//                 << " " << cloud.points[ pointIdxRadiusSearch[i] ].z 
-//                 << " (squared distance: " << pointRadiusSquaredDistance[i] << ")" << std::endl;
-// 		
-//   }
-  kdtree.radiusSearch (searchPoint, radius, pointIdxRadiusSearch, pointRadiusSquaredDistance);
-  return pointIdxRadiusSearch.size ();
+  matchingNUM = pointIdxRadiusSearch.size ();
+  return nnfeature;
 }
 
 float Dist(vector<float> a, vector<float> b)

@@ -18,6 +18,9 @@ int main(int argc, char **argv) {
     string descriptorfiles ="./pointclouds/" + num+ ".des";
     saveDescriptor(handmoudle, descriptorfiles);
     
+    string trianglepointsfiles ="./pointclouds/" + num+ ".tri";
+    saveTrianglepointsfiles(handmoudle, trianglepointsfiles);
+    
 //     pcl::PointCloud<pcl::Normal> handmoudlenormal;
 //     handmoudlenormal.resize(handmoudle.size()); 
 //     for(int i = 0; i < handmoudle.size(); ++i)

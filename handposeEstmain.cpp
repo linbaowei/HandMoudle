@@ -7,8 +7,16 @@
 vector<pair<float, int> > result;
 vector <vector <float> > objectDescriptor;
 vector< vector <vector <float> > > allhands;
+vector < vector <pair<Eigen::Vector3f, Eigen::Vector3f> > >alltripoints;
+vector<vector<pair<float, float> > > allhandpotFeatures(pointcloudnum+1);
 pthread_mutex_t mylock=PTHREAD_MUTEX_INITIALIZER;
 static int cmp( pair<float, int >  i, pair<float, int > j){
+	if( i.first > j.first)
+		return 0;
+	else
+		return 1;
+}
+static int cmp2( pair<float, float >  i, pair<float, float > j){
 	if( i.first > j.first)
 		return 0;
 	else
@@ -23,9 +31,30 @@ int main(int argc, char **argv) {
     string num = geo.numToString(i);  
     string pointcloudfiles ="./pointclouds/" + num+ ".ply";  
     string descriptorfiles ="./pointclouds/" + num+ ".des";
+    string tripointsfiles ="./pointclouds/" + num+ ".tri";
     vector <vector <float> > Descriptor;
     loadDescriptor(Descriptor, descriptorfiles);
     allhands.push_back(Descriptor);
+    vector <pair<Eigen::Vector3f, Eigen::Vector3f> > tripoints;
+    loadTrianglepointsfiles(tripoints, tripointsfiles);
+    alltripoints.push_back(tripoints);
+    
+    vector<pair<float, float> > ei(3); 
+    Eigen::Vector3f centerpoi = tripoints.at(0).first + tripoints.at(1).first + tripoints.at(2).first;
+    centerpoi /= 3;
+    Eigen::Vector3f centernormal = geo.CrossProduct(tripoints.at(0).first - tripoints.at(1).first, tripoints.at(0).first - tripoints.at(2).first);
+    ei[0].first = (centerpoi - tripoints.at(0).first).norm();
+    ei[1].first = (centerpoi - tripoints.at(1).first).norm();
+    ei[2].first = (centerpoi - tripoints.at(2).first).norm();
+    float angle1 = geo.VectorAngle(centernormal, tripoints.at(0).second);
+    ei[0].second = angle1 < M_PI/2 ? angle1 : angle1 - M_PI/2;
+    float angle2 = geo.VectorAngle(centernormal, tripoints.at(1).second);
+    ei[1].second = angle2 < M_PI/2 ? angle2 : angle2 - M_PI/2;
+    float angle3 = geo.VectorAngle(centernormal, tripoints.at(2).second);
+    ei[2].second = angle3 < M_PI/2 ? angle3 : angle3 - M_PI/2;
+    sort(ei.begin(), ei.end(), cmp2);
+    allhandpotFeatures[i] = ei;
+    //cout << i << endl;
   }
   cerr << "load *.des files successfully!" << endl;
   
@@ -47,9 +76,9 @@ int main(int argc, char **argv) {
     pointcloudnormal.at(i).normal_x = pointcloud.at(i).normal_x;
     pointcloudnormal.at(i).normal_y = pointcloud.at(i).normal_y;
     pointcloudnormal.at(i).normal_z = pointcloud.at(i).normal_z;
-    pointcloud.at(i).x *= 0.2;
-    pointcloud.at(i).y *= 0.2;
-    pointcloud.at(i).z *= 0.2;
+    pointcloud.at(i).x *= 0.18;
+    pointcloud.at(i).y *= 0.18;
+    pointcloud.at(i).z *= 0.18;
   }
   pcl::visualization::PCLVisualizer mainview("pointcloud");  
   mainview.setPosition(0,0);	
@@ -95,7 +124,56 @@ int main(int argc, char **argv) {
 //   {
 //     mainviewdown.spinOnce ();
 //   }
-  
+      
+  srand((unsigned)time(NULL));
+  int OBJPOINTNUM = 50;
+  vector< vector <pair<Eigen::Vector3f, Eigen::Vector3f> > > allobjecttripoints(OBJPOINTNUM);
+  vector<vector<pair<float, float> > > allobjpotFeatures(OBJPOINTNUM);
+  for(int i = 0; i < OBJPOINTNUM; ++i)
+  {    
+    int index1 = rand()%(cloud_filtered.size());
+    int index2 = rand()%(cloud_filtered.size());
+    while(index2==index1)
+    {
+      index2 = rand()%(cloud_filtered.size());
+    }
+    int index3 = rand()%(cloud_filtered.size());
+    while(index3==index2||index3 == index1)
+    {
+      index3 = rand()%(cloud_filtered.size());
+    }
+    
+    vector <pair<Eigen::Vector3f, Eigen::Vector3f> > objecttripoints(3);
+    objecttripoints[0].first = cloud_filtered.at(index1).getArray3fMap();
+    objecttripoints[0].second = cloud_filtered.at(index1).getNormalVector3fMap();
+    objecttripoints[1].first = cloud_filtered.at(index2).getArray3fMap();
+    objecttripoints[1].second = cloud_filtered.at(index2).getNormalVector3fMap();
+    objecttripoints[2].first = cloud_filtered.at(index3).getArray3fMap();
+    objecttripoints[2].second = cloud_filtered.at(index3).getNormalVector3fMap();
+    allobjecttripoints[i] = objecttripoints;
+    
+    vector<pair<float, float> > ei(3); 
+    Eigen::Vector3f centerpoi = cloud_filtered.at(index1).getArray3fMap() + cloud_filtered.at(index2).getArray3fMap() + cloud_filtered.at(index3).getArray3fMap();
+    centerpoi /= 3;
+    Eigen::Vector3f centernormal = geo.CrossProduct(cloud_filtered.at(index1).getArray3fMap() - cloud_filtered.at(index2).getArray3fMap(), cloud_filtered.at(index1).getArray3fMap() - cloud_filtered.at(index3).getArray3fMap());
+    Eigen::Vector3f point1 = cloud_filtered.at(index1).getArray3fMap();
+    ei[0].first = (centerpoi - point1).norm();
+    Eigen::Vector3f point2 = cloud_filtered.at(index2).getArray3fMap();
+    ei[1].first = (centerpoi - point2).norm();
+    Eigen::Vector3f point3 = cloud_filtered.at(index3).getArray3fMap();
+    ei[2].first = (centerpoi - point3).norm();
+    float angle1 = geo.VectorAngle(centernormal, cloud_filtered.at(index1).getNormalVector3fMap());
+    ei[0].second = angle1 < M_PI/2 ? angle1 : angle1 - M_PI/2;
+    float angle2 = geo.VectorAngle(centernormal, cloud_filtered.at(index2).getNormalVector3fMap());
+    ei[1].second = angle2 < M_PI/2 ? angle2 : angle2 - M_PI/2;
+    float angle3 = geo.VectorAngle(centernormal, cloud_filtered.at(index3).getNormalVector3fMap());
+    ei[2].second = angle3 < M_PI/2 ? angle3 : angle3 - M_PI/2;
+    sort(ei.begin(), ei.end(), cmp2);
+    allobjpotFeatures[i] = ei;
+  }
+         
+
+         
          
   vector < pair <Eigen::Vector3f, Eigen::Vector3f> > objecttouchpoints;  //pair <point, normal>  
   for(int i = 0; i < cloud_filtered.size(); ++ i)
@@ -116,7 +194,7 @@ int main(int argc, char **argv) {
       {
 	Eigen::Vector3f p1p2 = objecttouchpoints.at(j).first - objecttouchpoints.at(p).first;
 	float d = p1p2.norm();
-	if(d < 50)
+	if(d < 25)
 	  continue;
 	float theta1 = geo.VectorAngle(objecttouchpoints.at(j).second, p1p2);
 	if(theta1 > M_PI/2)
@@ -141,11 +219,11 @@ int main(int argc, char **argv) {
     
   
   //i: hand pose num
-  //#pragma omp parallel for 
+  #pragma omp parallel for 
   for(int i = 0; i < allhands.size(); ++ i)
   {
-    //if(i%10 == 0)
-      cout << i << endl;
+    if(i%10 == 0)
+       cout << i << endl;
     float Ei_j = 0; 
     float w_i = 0;
     //j: feature num of hand pose i
@@ -153,26 +231,15 @@ int main(int argc, char **argv) {
     {
       float diserror = 10e10;
       int count_denominator = 0;
+      int count_numerator = 0;
+      //vector <float> nnfeature = NN2(allhands.at(i).at(j), objectDescriptor, 0.5, diserror, count_numerator);
       vector<float> nnfeature = NN(allhands.at(i).at(j), objectDescriptor, diserror);
-      int count_numerator = NN2(allhands.at(i).at(j), objectDescriptor, diserror);
-      for(int p = 0; p < allhands.size(); ++ p)
-      {
-	if(i != p)
-	{
-	  int count_denominatortmp = NN2(allhands.at(i).at(j), allhands.at(p), diserror);
-	  if(count_denominatortmp > 0)
-	  count_denominator += count_denominatortmp;
-	}
-      }
-      if(count_denominator != 0)
-      {
-	float w_ik = (float)count_numerator / (float)count_denominator;
-	w_i += w_ik;	
-	float tmp_E = Dist(allhands.at(i).at(j), nnfeature);
-	Ei_j += w_ik *tmp_E;  
-      }
+      float tmp_E = Dist(allhands.at(i).at(j), nnfeature);
+      Ei_j += tmp_E;
     }
-    Ei_j /= (allhands.at(i).size()*w_i);
+    Ei_j /= (allhands.at(i).size());
+    if(isnan(Ei_j))
+      continue;
     pair<float, int> tmpres;
     tmpres.first = Ei_j;
     tmpres.second = i;
@@ -183,18 +250,34 @@ int main(int argc, char **argv) {
   
   
   sort(result.begin(), result.end(), cmp);
+  for(int i = 0; i < result.size(); ++i)
+  {
+    cout << result.at(i).first << " " << i << " " << result.at(i).second << endl;
+  }
   vector<pair<float, int> >::iterator iter,iterend;
   for (iter = result.begin(), iterend = result.end(); iter != iterend; ++iter)
   {
-    if(iter->first == 0)
+    
+    if(isnan(iter->first))
     {
       result.erase(iter);
     }
+  }
+  for (iter = result.begin(), iterend = result.end(); iter != iterend; ++iter)
+  {
+    if(abs(iter->first - 0) < 0.000001)
+    {
+      result.erase(iter);
+    }
+  }
+  for (iter = result.begin(), iterend = result.end(); iter != iterend; ++iter)
+  {
     if(iter->second > pointcloudnum)
     {
       result.erase(iter);
     }
   }
+  
   for(int i = 0; i < 10; ++ i)
   {
     pcl::visualization::PCLVisualizer mainviewhand("pointcloud"+i);  

@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 2.6)
 project(handmodlue)
 SET(CMAKE_BUILD_TYPE Debug)
+#SET(CMAKE_BUILD_TYPE Release)
 FIND_PACKAGE (Threads)
 FIND_PACKAGE(OpenCV REQUIRED)
 find_package(PCL 1.7 REQUIRED)
