@@ -69,7 +69,49 @@ pcl::PointCloud<PointType> generatecylinder(float radius,float length)
  
   return cylinder_cloud;
 }
-
+pcl::PointCloud<PointType> generatecylindersecondjoint(float radius,float length)
+{
+  pcl::PointCloud<PointType> cylinder_cloud;
+  int step = 40;
+  int r_pc = 0;
+  int g_pc = 0;
+  int b_pc = 255;
+  float px, py, pz;
+  for (float phi=0; phi <2* M_PI; phi+=2*M_PI/step)
+  {
+    pz = radius*cos(phi);
+    px = radius*sin(phi);
+    for(float height = 0; height < length; height += 0.5)
+    {
+      
+      PointType point;
+      point.x = px;
+      point.y = height;
+      point.z = pz;
+      point.r = r_pc;
+      point.g = g_pc;
+      point.b = b_pc;
+      point.normal_x = 0;
+      point.normal_y = 0;
+      point.normal_z = 0;
+      if(abs(length - length/3 - height) < 5 && abs(phi - 0) < 0.5 )
+      {
+	point.r = 255;
+	point.g = 0;
+	point.b = 0;
+      }
+      if(abs(length - length/3 - height) < 1 && abs(phi - M_PI) < 0.2)
+      {
+	point.r = 0;
+	point.g = 0;
+	point.b = 0;
+      }
+      cylinder_cloud.push_back(point);
+    }      
+  }
+ 
+  return cylinder_cloud;
+}
 pcl::PointCloud<PointType> generatecylinderfirstjoint(float radius,float length)
 {
   pcl::PointCloud<PointType> cylinder_cloud;
@@ -98,7 +140,7 @@ pcl::PointCloud<PointType> generatecylinderfirstjoint(float radius,float length)
       if(abs(length - length/10 - height) < 5 && abs(phi - 0) < 0.5 )
       {
 	point.r = 255;
-	point.g = 100;
+	point.g = 0;
 	point.b = 0;
       }
       if(abs(length - length/10 - height) < 1 && abs(phi - M_PI) < 0.2)
@@ -329,28 +371,28 @@ pcl::PointCloud<PointType> paramread(string filename)
   pcl::PointCloud<PointType> cylinder1_2 = generatecylinder(fingerthickness, l1_2);
   pcl::PointCloud<PointType> cylinder2 = generatecylinder(fingerthickness, l2);
   Eigen::Affine3f transform_selfrotation = Eigen::Affine3f::Identity();
-  transform_selfrotation.rotate (Eigen::AngleAxisf (angle2deg(-150), Eigen::Vector3f::UnitY())); 
+  transform_selfrotation.rotate (Eigen::AngleAxisf (angle2deg(-100), Eigen::Vector3f::UnitY())); 
   pcl::transformPointCloud (cylinder0_1, cylinder0_1, transform_selfrotation);
   pcl::transformPointCloud (cylinder1_2, cylinder1_2, transform_selfrotation);
   pcl::transformPointCloud (cylinder2, cylinder2, transform_selfrotation);
   
   pcl::PointCloud<PointType> cylinder0_4 = generatecylinderfirstjoint(fingerthickness, l0_4);
-  pcl::PointCloud<PointType> cylinder4_5 = generatecylinder(fingerthickness, l4_5);
+  pcl::PointCloud<PointType> cylinder4_5 = generatecylindersecondjoint(fingerthickness, l4_5);
   pcl::PointCloud<PointType> cylinder5_6 = generatecylinder(fingerthickness, l5_6);
   pcl::PointCloud<PointType> cylinder6 = generatecylinder(fingerthickness, l6);
 
   pcl::PointCloud<PointType> cylinder0_7 = generatecylinderfirstjoint(fingerthickness, l0_7);
-  pcl::PointCloud<PointType> cylinder7_8 = generatecylinder(fingerthickness, l7_8);
+  pcl::PointCloud<PointType> cylinder7_8 = generatecylindersecondjoint(fingerthickness, l7_8);
   pcl::PointCloud<PointType> cylinder8_9 = generatecylinder(fingerthickness, l8_9);
   pcl::PointCloud<PointType> cylinder9 = generatecylinder(fingerthickness, l9);
 
   pcl::PointCloud<PointType> cylinder0_10 = generatecylinderfirstjoint(fingerthickness, l0_10);
-  pcl::PointCloud<PointType> cylinder10_11 = generatecylinder(fingerthickness, l10_11);
+  pcl::PointCloud<PointType> cylinder10_11 = generatecylindersecondjoint(fingerthickness, l10_11);
   pcl::PointCloud<PointType> cylinder11_12 = generatecylinder(fingerthickness, l11_12);
   pcl::PointCloud<PointType> cylinder12 = generatecylinder(fingerthickness, l12);
 
   pcl::PointCloud<PointType> cylinder0_13 = generatecylinderfirstjoint(fingerthickness, l0_13);
-  pcl::PointCloud<PointType> cylinder13_14 = generatecylinder(fingerthickness, l13_14);
+  pcl::PointCloud<PointType> cylinder13_14 = generatecylindersecondjoint(fingerthickness, l13_14);
   pcl::PointCloud<PointType> cylinder14_15 = generatecylinder(fingerthickness, l14_15);
   pcl::PointCloud<PointType> cylinder15 = generatecylinder(fingerthickness, l15);
 
@@ -582,53 +624,52 @@ pcl::PointCloud<PointType> paramread(string filename)
   hand_ori = sphere0;
   
   
-  hand_ori += estimateTatchingPointsAndNormals(cylinder0_1_transformed_cloud);
-  hand_ori += estimateTatchingPointsAndNormals(cylinder1_2_transformed_cloud);
+  hand_ori += estimateTatchingPointsAndNormals(cylinder0_1_transformed_cloud, false);
+  hand_ori += estimateTatchingPointsAndNormals(cylinder1_2_transformed_cloud, false);
   hand_ori += sphere1;  
-  hand_ori += estimateTatchingPointsAndNormals(cylinder2_transformed_cloud);
+  hand_ori += estimateTatchingPointsAndNormals(cylinder2_transformed_cloud, true);
   hand_ori += sphere2;
   
   
-  hand_ori += estimateTatchingPointsAndNormals(cylinder0_4_transformed_cloud);
-  hand_ori += estimateTatchingPointsAndNormals(cylinder4_5_transformed_cloud);
+  hand_ori += estimateTatchingPointsAndNormals(cylinder0_4_transformed_cloud, false);
+  hand_ori += estimateTatchingPointsAndNormals(cylinder4_5_transformed_cloud, true);
   hand_ori += sphere4;
-  hand_ori += estimateTatchingPointsAndNormals(cylinder5_6_transformed_cloud);
+  hand_ori += estimateTatchingPointsAndNormals(cylinder5_6_transformed_cloud, true);
   hand_ori += sphere5;
-  hand_ori += estimateTatchingPointsAndNormals(cylinder6_transformed_cloud);
+  hand_ori += estimateTatchingPointsAndNormals(cylinder6_transformed_cloud, true);
   hand_ori += sphere6;
   
-  hand_ori += estimateTatchingPointsAndNormals(cylinder0_7_transformed_cloud);
-  hand_ori += estimateTatchingPointsAndNormals(cylinder7_8_transformed_cloud);
+  hand_ori += estimateTatchingPointsAndNormals(cylinder0_7_transformed_cloud, false);
+  hand_ori += estimateTatchingPointsAndNormals(cylinder7_8_transformed_cloud, true);
   hand_ori += sphere7;
-  hand_ori += estimateTatchingPointsAndNormals(cylinder8_9_transformed_cloud);
+  hand_ori += estimateTatchingPointsAndNormals(cylinder8_9_transformed_cloud, true);
   hand_ori += sphere8;
-  hand_ori += estimateTatchingPointsAndNormals(cylinder9_transformed_cloud);
+  hand_ori += estimateTatchingPointsAndNormals(cylinder9_transformed_cloud, true);
   hand_ori += sphere9;
   
   
-  hand_ori += estimateTatchingPointsAndNormals(cylinder0_10_transformed_cloud);
-  hand_ori += estimateTatchingPointsAndNormals(cylinder10_11_transformed_cloud);
+  hand_ori += estimateTatchingPointsAndNormals(cylinder0_10_transformed_cloud, false);
+  hand_ori += estimateTatchingPointsAndNormals(cylinder10_11_transformed_cloud, true);
   hand_ori += sphere10;
-  hand_ori += estimateTatchingPointsAndNormals(cylinder11_12_transformed_cloud);
+  hand_ori += estimateTatchingPointsAndNormals(cylinder11_12_transformed_cloud, true);
   hand_ori += sphere11;
-  hand_ori += estimateTatchingPointsAndNormals(cylinder12_transformed_cloud);
+  hand_ori += estimateTatchingPointsAndNormals(cylinder12_transformed_cloud, true);
   hand_ori += sphere12;
   
   
-  hand_ori += estimateTatchingPointsAndNormals(cylinder0_13_transformed_cloud);
-  hand_ori += estimateTatchingPointsAndNormals(cylinder13_14_transformed_cloud);
+  hand_ori += estimateTatchingPointsAndNormals(cylinder0_13_transformed_cloud, false);
+  hand_ori += estimateTatchingPointsAndNormals(cylinder13_14_transformed_cloud, true);
   hand_ori += sphere13;
-  hand_ori += estimateTatchingPointsAndNormals(cylinder14_15_transformed_cloud);
+  hand_ori += estimateTatchingPointsAndNormals(cylinder14_15_transformed_cloud, true);
   hand_ori += sphere14;
-  hand_ori += estimateTatchingPointsAndNormals(cylinder15_transformed_cloud);
+  hand_ori += estimateTatchingPointsAndNormals(cylinder15_transformed_cloud, true);
   hand_ori += sphere15;
   
   return hand_ori;
 }
 
 
-//problems
-pcl::PointCloud<PointType> estimateTatchingPointsAndNormals(pcl::PointCloud<PointType>  pointcloud)
+pcl::PointCloud<PointType> estimateTatchingPointsAndNormals(pcl::PointCloud<PointType>  pointcloud, bool touchjoint)
 {
   pcl::PointCloud<PointType> tatchingpoints;
   PointType tmppoint;
@@ -636,7 +677,6 @@ pcl::PointCloud<PointType> estimateTatchingPointsAndNormals(pcl::PointCloud<Poin
   tmppoint.y = 0;
   tmppoint.z = 0;
   int count = 0;
-  bool trianglepoint = false;
   Eigen::Vector3f backpoint;
   for(int i = 0; i < pointcloud.size(); ++ i)
   {
@@ -645,23 +685,24 @@ pcl::PointCloud<PointType> estimateTatchingPointsAndNormals(pcl::PointCloud<Poin
       tmppoint.x += pointcloud.at(i).x;
       tmppoint.y += pointcloud.at(i).y;
       tmppoint.z += pointcloud.at(i).z;
+      if(touchjoint) //touching points 
+      {
+      tmppoint.r = 255;
+      tmppoint.g = 255;
+      tmppoint.b = 0;
+      }
+      else  // ! touching points
+      {
+	tmppoint.r = 100;
+	tmppoint.g = 100;
+	tmppoint.b = 0;
+      }
       count ++;
       PointType tmppoints;
       tmppoints = pointcloud.at(i);
       tatchingpoints.push_back(tmppoints);
-      trianglepoint = true;
     }
-    if(pointcloud.at(i).r == 255 && pointcloud.at(i).g == 100 && pointcloud.at(i).b == 0)
-    {      
-      tmppoint.x += pointcloud.at(i).x;
-      tmppoint.y += pointcloud.at(i).y;
-      tmppoint.z += pointcloud.at(i).z;
-      count ++;
-      PointType tmppoints;
-      tmppoints = pointcloud.at(i);
-      tatchingpoints.push_back(tmppoints);
-      
-    }
+   
     if(pointcloud.at(i).r == 0 && pointcloud.at(i).g == 0 && pointcloud.at(i).b == 0)
     {      
       backpoint = pointcloud.at(i).getArray3fMap();
@@ -670,20 +711,7 @@ pcl::PointCloud<PointType> estimateTatchingPointsAndNormals(pcl::PointCloud<Poin
   tmppoint.x /= count;
   tmppoint.y /= count;
   tmppoint.z /= count;
-  //touching point on fingers
-  if(trianglepoint)
-  {
-    tmppoint.r = 255;
-    tmppoint.g = 255;
-    tmppoint.b = 0;
-  }
-  //touching point on first joints
-  else
-  {
-    tmppoint.r = 100;
-    tmppoint.g = 100;
-    tmppoint.b = 0;
-  }
+
   Eigen::Vector3f frontpoint = tmppoint.getArray3fMap();
   
   pcl::PCA<PointType> pca;
@@ -825,7 +853,7 @@ bool saveDescriptor(pcl::PointCloud<PointType> handmoudle, string filename)
       {
 	Eigen::Vector3f p1p2 = handtouchpoints.at(j).first - handtouchpoints.at(p).first;
 	float d = p1p2.norm();
-	if(d < 25)
+	if(d < 30)
 	  continue;
 	float theta1 = geo.VectorAngle(handtouchpoints.at(j).second, p1p2);
 	if(theta1 > M_PI/2)

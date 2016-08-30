@@ -194,7 +194,7 @@ int main(int argc, char **argv) {
       {
 	Eigen::Vector3f p1p2 = objecttouchpoints.at(j).first - objecttouchpoints.at(p).first;
 	float d = p1p2.norm();
-	if(d < 25)
+	if(d < 30)
 	  continue;
 	float theta1 = geo.VectorAngle(objecttouchpoints.at(j).second, p1p2);
 	if(theta1 > M_PI/2)
@@ -222,7 +222,7 @@ int main(int argc, char **argv) {
   #pragma omp parallel for 
   for(int i = 0; i < allhands.size(); ++ i)
   {
-    if(i%10 == 0)
+    if(i%100 == 0)
        cout << i << endl;
     float Ei_j = 0; 
     float w_i = 0;
@@ -278,7 +278,7 @@ int main(int argc, char **argv) {
     }
   }
   
-  for(int i = 0; i < 10; ++ i)
+  for(int i = 0; i < 20; ++ i)
   {
     pcl::visualization::PCLVisualizer mainviewhand("pointcloud"+i);  
     mainviewhand.setPosition(0,0);	

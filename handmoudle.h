@@ -25,7 +25,7 @@ using namespace std;
 
 #include "Geomentry.h"
 
-#define pointcloudnum 500
+#define pointcloudnum 1000
 typedef pcl::PointXYZRGBNormal PointType;
 
 void paramwrite();
@@ -33,11 +33,12 @@ void paramRandomWrite(int count);
 pcl::PointCloud<PointType> paramread(string filename);
 pcl::PointCloud<PointType> generatecylinder(float radius,float length);
 pcl::PointCloud<PointType> generatecylinderfirstjoint(float radius,float length);
+pcl::PointCloud<PointType> generatecylindersecondjoint(float radius,float length);
 pcl::PointCloud<PointType> generateSphere(float radius);
 float angle2deg(float angle);
 Eigen::Affine3f rotationzy(float theta);
 Eigen::Affine3f rotation01(float theta);
-pcl::PointCloud<PointType> estimateTatchingPointsAndNormals(pcl::PointCloud<PointType> pointcloud);
+pcl::PointCloud<PointType> estimateTatchingPointsAndNormals(pcl::PointCloud<PointType> pointcloud, bool touchjoint);
 bool saveTrianglepointsfiles(pcl::PointCloud<PointType> handmoudle, string filename);
 bool saveDescriptor(pcl::PointCloud<PointType> handmoudle, string filename);
 bool loadDescriptor(vector <vector <float> > & Descriptor, string filename);
